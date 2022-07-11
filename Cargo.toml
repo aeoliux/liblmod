@@ -1,0 +1,12 @@
+[package]
+name = "liblmod"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+description = """
+Library for loading Linux kernel modules
+"""
+license = "ZGPL1"
+
+
+[dependencies]
