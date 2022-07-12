@@ -1,9 +1,11 @@
 [package]
 name = "liblmod"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 readme = "README.md"
 description = "Library for loading Linux kernel modules"
+homepage = "https://github.com/zapomnij/liblmod"
+repository = "https://github.com/zapomnij/liblmod"
 license = "ZGPL1"
 
 [dependencies]
