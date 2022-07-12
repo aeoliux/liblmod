@@ -6,6 +6,6 @@ readme = "README.md"
 description = "Library for loading Linux kernel modules"
 homepage = "https://github.com/zapomnij/liblmod"
 repository = "https://github.com/zapomnij/liblmod"
-license = "ZGPL1"
+license-file = "LICENSE"
 
 [dependencies]
