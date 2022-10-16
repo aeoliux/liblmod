@@ -21,6 +21,7 @@ mod module_libc;
 pub mod loader;
 
 use std::{io::{self, BufReader, BufRead, Read}, path::Path, fs, ffi::CStr, os::raw::*};
+use std::io::ErrorKind;
 
 /// Loads module by path
 /// 
@@ -28,29 +29,31 @@ use std::{io::{self, BufReader, BufRead, Read}, path::Path, fs, ffi::CStr, os::r
 /// ```rust
 /// extern crate liblmod;
 /// 
-/// if let Err(e) = load("./example_module.ko", "example.param=0".to_string()) {
+/// if let Err(e) = liblmod::load("./example_module.ko", "example.param=0".to_string()) {
 ///     eprintln!("Failed to load module: {e}");
 /// }
 /// ```
 pub fn load(path_str: &str, params: String) -> io::Result<()> {
-    let path = Path::new(path_str);
+	let path = Path::new(path_str);
 
-    let mut file = fs::File::open(path)?;
-    let mut image = Vec::new();
-    file.read_to_end(&mut image)?;
+	// Read data from file
+	let mut file = fs::File::open(path)?;
+	let mut image = Vec::new();
+	file.read_to_end(&mut image)?;
 
-    loader::load(&image, params)
+	// Call a loader
+	loader::load(&image, params)
 }
 
 mod kernel;
 
 /// Enum for modprobe function
 pub enum Selection {
-    /// Use current kernel
-    Current, 
+	/// Use current kernel
+	Current,
 
-    /// Select kernel manually
-    Other(String)
+	/// Select kernel manually
+	Other(String)
 }
 
 /// Loads module for selected or current running kernel
@@ -70,55 +73,95 @@ pub enum Selection {
 /// }
 /// ```
 pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<()> {
-    let kernelname = match kernel {
-        Selection::Other(a) => a,
-        Selection::Current => {
-            let mut uname = kernel::Utsname::new();
-            unsafe {
-                if kernel::uname(&mut uname) != 0 {
-                    return Err(io::Error::last_os_error());
-                }
+	// Get kernel version
+	let kernelname = match kernel {
+		Selection::Other(a) => a,
+		Selection::Current => {
+			let mut uname = kernel::Utsname::new();
+			unsafe {
+				if kernel::uname(&mut uname) != 0 {
+					return Err(io::Error::last_os_error());
+				}
 
-                CStr::from_ptr(uname.release.as_ptr()).to_str().unwrap().to_string()
-            }
-        }
-    };
-    
-    let modulespath = format!("/lib/modules/{}/modules.order", &kernelname);
-    let mut path = String::from("");
-    {
-        let fd = fs::File::open(Path::new(&modulespath.as_str()))?;
+				CStr::from_ptr(uname.release.as_ptr()).to_str().unwrap().to_string()
+			}
+		}
+	};
+
+	// Construct modules manifests paths
+    let basepath = format!("/lib/modules/{}", &kernelname);
+	let modulespath = format!("{}/modules.order", &basepath);
+    let depspath = format!("{}/modules.dep", &basepath);
+
+    let mut module: String = String::new();
+	let mut path: String = String::new();
+
+	// Get path for specified module from modules.order
+	{
+		let fd = fs::File::open(&modulespath)?;
+		let br = BufReader::new(fd);
+		for line in br.lines() {
+			let unwrapped = match line {
+				Ok(o) => o,
+				Err(e) => return Err(e),
+			};
+			if unwrapped.contains(format!("/{}.ko", &name).as_str()) {
+                module = unwrapped.clone();
+				path = format!("{}/{}", &basepath, unwrapped.clone());
+			}
+		}
+
+		if path.eq("") {
+			return Err(
+				io::Error::new(io::ErrorKind::Other, format!("Module is not provided by {kernelname} kernel"))
+			)
+		}
+	}
+
+	// Load dependencies for module
+    if !module.eq("") {
+        let fd = fs::File::open(&depspath)?;
         let br = BufReader::new(fd);
         for line in br.lines() {
             let unwrapped = match line {
-                Ok(o) => o,
-                Err(e) => return Err(e),
-            };
-            if unwrapped.contains(format!("/{}.ko", &name).as_str()) {
-                path = format!("/lib/modules/{}/{}", &kernelname, unwrapped.clone());
-            }
-        }
+				Ok(o) => o,
+				Err(e) => return Err(e),
+			};
+            if unwrapped.starts_with(&module) {
+                let split: Vec<&str> = unwrapped.split(" ").collect();
+                let length = split.len();
+                if length > 1 {
+                    for dep in &split[1..] {
+                        let modpath = format!("{}/{}", &basepath, dep);
 
-        if path.eq(&String::from("")) {
-            return Err(
-                io::Error::new(io::ErrorKind::Other, format!("Module is not provided by {kernelname} kernel"))
-            )
+                        match load(modpath.as_str(), String::new()) {
+							Err(e) => {
+								if e.kind() != ErrorKind::AlreadyExists {
+									return Err(e);
+								}
+							}
+							Ok(_) => (),
+						}
+                    }
+                }
+            }
         }
     }
 
-    load(path.as_str(), params)
+	// Load final module
+	load(path.as_str(), params)
 }
 
 /// Flags for rmmod
 pub enum Flags {
-    /// Module unloading without any flags
-    None,
+	/// Module unloading without any flags
+	None,
 
-    /// Force module unloading
-    Force, 
+	/// Force module unloading
+	Force,
 
-    /// Module unloading with O_NONBLOCK flag
-    Usuall
+	/// Module unloading with O_NONBLOCK flag
+	Casual
 }
 
 /// Removes kernel module from current running kernel
@@ -132,16 +175,20 @@ pub enum Flags {
 /// }
 /// ```
 pub fn rmmod(name: String, flags: Flags) -> io::Result<()> {
-    let mut flags_raw: c_uint = 0;
-    match flags {
-        Flags::None => (),
-        Flags::Force => flags_raw = u32::from_str_radix("4000", 8).unwrap() | u32::from_str_radix("1000", 8).unwrap(),
-        Flags::Usuall => flags_raw = u32::from_str_radix("4000", 8).unwrap(),
-    }
+	let mut flags_raw: c_uint = 0;
 
-    if module_libc::delete_module(name, flags_raw) == -1 {
-        return Err(io::Error::last_os_error());
-    }
+	// Construct flags for module unloading (Linux 6.0 API: https://github.com/torvalds/linux/blob/v6.0/include/uapi/asm-generic/fcntl.h)
+	match flags {
+		Flags::None => (),
+		Flags::Force => flags_raw = u32::from_str_radix("4000", 8).unwrap() | u32::from_str_radix("1000", 8).unwrap(),
+		Flags::Casual => flags_raw = u32::from_str_radix("4000", 8).unwrap(),
+	}
 
-    Ok(())
+
+	// Call kernel to unload module
+	if module_libc::delete_module(name, flags_raw) == -1 {
+		return Err(io::Error::last_os_error());
+	}
+
+	Ok(())
 }

@@ -16,3 +16,6 @@ fn main() -> std::io::Result<()> {
     liblmod::modprobe("kvm".to_string(), "".to_string(), liblmod::Selection::Current)
 }
 ```
+
+### License
+Crate is licensed to MIT/X11 license.

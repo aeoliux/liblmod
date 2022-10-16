@@ -1,28 +1,21 @@
-Copyright (c) Zapomnij 2022
-This software is distributed under the terms of Zapomnij's General Public License 1.0 (ZGPL1)
+MIT License
 
-Zapomnij's General Public License 1.0
+Copyright (c) 2022 Jacek
 
-Copyright (c) Zapomnij 2022
-This copyright refers to license author, not software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-This software is given to you and:
-1. You're allowed to:
-- Adjust code of this software to make it more suitable for you,
-- Modify software (for example: code upgrade) and publish modified software, if you:
- - use the same license,
- - inform, that author of this software is also an author of part of your modified software,
-- Compile, use and install this software for any purpose,
-- Distribute this software in your software via binary or source code format (that's your decision). Just you need to inform, that author of this software is also author of part of your software also you don't need to use the same license as this software,
-- Distribute modified software in your software on terms described above.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2. You're not allowed to:
-- Publish copy of this software, unless you inform, who is an author of this software (sometimes this situation is called 'Project Stealing').
-
-3. Additional information:
-- The author of this software is not legally responsible for damages, which *child software has done, and for damages made using this software by other users,
-- To distribute software under terms of this license, you have to release source code of this software,
-- If you edit license content in this file, your software can't be called 'Distributed on terms of Zapomnij's General Public License 1.0',
-- You're using this software at your own risk.
-
-*child software - software which has been developed including this software, upgraded or modified versions of this software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

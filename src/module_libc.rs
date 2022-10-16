@@ -1,7 +1,7 @@
 use std::{os::raw::*, ffi::CString};
 
 extern "C" {
-    fn syscall(number: c_long, _: ...) -> c_long;
+	fn syscall(number: c_long, _: ...) -> c_long;
 }
 
 #[cfg(target_arch = "x86")]
@@ -24,14 +24,14 @@ const DELETE_MODULE: c_long = 106;
 
 #[allow(temporary_cstring_as_ptr)]
 pub fn init_module(image: &[u8], size: c_uint, params: String) -> c_long {
-    unsafe {
-        syscall(INIT_MODULE, image.as_ptr(), size, &CString::new(params).unwrap().as_ptr())
-    }
+	unsafe {
+		syscall(INIT_MODULE, image.as_ptr(), size, &CString::new(params).unwrap().as_ptr())
+	}
 }
 
 #[allow(temporary_cstring_as_ptr)]
 pub fn delete_module(name: String, flags: c_uint) -> c_long {
-    unsafe {
-        syscall(DELETE_MODULE, CString::new(name).unwrap(), flags)
-    }
+	unsafe {
+		syscall(DELETE_MODULE, CString::new(name).unwrap(), flags)
+	}
 }
