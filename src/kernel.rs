@@ -11,7 +11,13 @@ pub struct Utsname {
 
 impl Utsname {
 	pub fn new() -> Utsname {
-		Utsname { sysname: [0; 65], nodename: [0; 65], release: [0; 65], version: [0; 65], machine: [0; 65] }
+		Utsname {
+			sysname: [0; 65],
+			nodename: [0; 65],
+			release: [0; 65],
+			version: [0; 65],
+			machine: [0; 65],
+		}
 	}
 }
 

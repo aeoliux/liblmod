@@ -1,34 +1,40 @@
 //! # liblmod - Library for loading Linux kernel modules
-//! 
+//!
 //! ### Features:
 //! - Loading modules (modprobe)
 //! - Unloading modules (rmmod)
-//! 
+//!
 //! ### Example code:
 //! ```rust
 //! extern crate liblmod;
-//! 
+//!
 //! fn main() -> std::io::Result<()> {
 //!     println!("Unloading module kvm");
 //!     liblmod::rmmod("kvm".to_string(), liblmod::Flags::Force)?;
-//! 
+//!
 //!     println!("Loading module kvm");
 //!     liblmod::modprobe("kvm".to_string(), "".to_string(), liblmod::Selection::Current)
 //! }
 //! ```
 
-mod module_libc;
 pub mod loader;
+mod module_libc;
 
-use std::{io::{self, BufReader, BufRead, Read}, path::Path, fs, ffi::CStr, os::raw::*};
 use std::io::ErrorKind;
+use std::{
+	ffi::CStr,
+	fs,
+	io::{self, BufRead, BufReader, Read},
+	os::raw::*,
+	path::Path,
+};
 
 /// Loads module by path
-/// 
+///
 /// Example
 /// ```rust
 /// extern crate liblmod;
-/// 
+///
 /// if let Err(e) = liblmod::load("./example_module.ko", "example.param=0".to_string()) {
 ///     eprintln!("Failed to load module: {e}");
 /// }
@@ -53,20 +59,20 @@ pub enum Selection {
 	Current,
 
 	/// Select kernel manually
-	Other(String)
+	Other(String),
 }
 
 /// Loads module for selected or current running kernel
-/// 
+///
 /// Example:
 /// ```rust
 /// extern crate liblmod;
-/// 
+///
 /// println!("Loading for current running");
 /// if let Err(e) = liblmod::modprobe("kvm".to_string(), "".to_string(), liblmod::Selection::Current) {
 ///     eprintln!("Failed to load module kvm for current running kernel: {e}");
 /// }
-/// 
+///
 /// println!("Loading for 5.4-x86_64");
 /// if let Err(e) = liblmod::modprobe("kvm".to_string(), "".to_string(), liblmod::Selection::Other("5.4-x86_64".to_string())) {
 ///     eprintln!("Failed to load module kvm for kernel 5.4-x86_64");
@@ -83,7 +89,10 @@ pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<(
 					return Err(io::Error::last_os_error());
 				}
 
-				CStr::from_ptr(uname.release.as_ptr()).to_str().unwrap().to_string()
+				CStr::from_ptr(uname.release.as_ptr())
+					.to_str()
+					.unwrap()
+					.to_string()
 			}
 		}
 	};
@@ -112,9 +121,10 @@ pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<(
 		}
 
 		if path.eq("") {
-			return Err(
-				io::Error::new(io::ErrorKind::Other, format!("Module is not provided by {kernelname} kernel"))
-			)
+			return Err(io::Error::new(
+				io::ErrorKind::Other,
+				format!("Module is not provided by {kernelname} kernel"),
+			));
 		}
 	}
 
@@ -161,15 +171,15 @@ pub enum Flags {
 	Force,
 
 	/// Module unloading with O_NONBLOCK flag
-	Casual
+	Casual,
 }
 
 /// Removes kernel module from current running kernel
-/// 
+///
 /// Example:
 /// ```rust
 /// extern crate liblmod;
-/// 
+///
 /// if let Err(e) = liblmod::rmmod("kvm".to_string(), liblmod::Flags::None) {
 ///     eprintln!("Failed to unload kernel module kvm: {e}");
 /// }
@@ -180,10 +190,12 @@ pub fn rmmod(name: String, flags: Flags) -> io::Result<()> {
 	// Construct flags for module unloading (Linux 6.0 API: https://github.com/torvalds/linux/blob/v6.0/include/uapi/asm-generic/fcntl.h)
 	match flags {
 		Flags::None => (),
-		Flags::Force => flags_raw = u32::from_str_radix("4000", 8).unwrap() | u32::from_str_radix("1000", 8).unwrap(),
+		Flags::Force => {
+			flags_raw =
+				u32::from_str_radix("4000", 8).unwrap() | u32::from_str_radix("1000", 8).unwrap()
+		}
 		Flags::Casual => flags_raw = u32::from_str_radix("4000", 8).unwrap(),
 	}
-
 
 	// Call kernel to unload module
 	if module_libc::delete_module(name, flags_raw) == -1 {

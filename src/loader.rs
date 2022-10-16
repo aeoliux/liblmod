@@ -1,7 +1,7 @@
 use std::io;
 
 /// Load kernel module by byte array.
-/// 
+///
 /// Example:
 /// ```rust
 /// extern crate liblmod;
