@@ -89,11 +89,11 @@ pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<(
 	};
 
 	// Construct modules manifests paths
-    let basepath = format!("/lib/modules/{}", &kernelname);
+	let basepath = format!("/lib/modules/{}", &kernelname);
 	let modulespath = format!("{}/modules.order", &basepath);
-    let depspath = format!("{}/modules.dep", &basepath);
+	let depspath = format!("{}/modules.dep", &basepath);
 
-    let mut module: String = String::new();
+	let mut module: String = String::new();
 	let mut path: String = String::new();
 
 	// Get path for specified module from modules.order
@@ -106,7 +106,7 @@ pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<(
 				Err(e) => return Err(e),
 			};
 			if unwrapped.contains(format!("/{}.ko", &name).as_str()) {
-                module = unwrapped.clone();
+				module = unwrapped.clone();
 				path = format!("{}/{}", &basepath, unwrapped.clone());
 			}
 		}
@@ -119,22 +119,22 @@ pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<(
 	}
 
 	// Load dependencies for module
-    if !module.eq("") {
-        let fd = fs::File::open(&depspath)?;
-        let br = BufReader::new(fd);
-        for line in br.lines() {
-            let unwrapped = match line {
+	if !module.eq("") {
+		let fd = fs::File::open(&depspath)?;
+		let br = BufReader::new(fd);
+		for line in br.lines() {
+			let unwrapped = match line {
 				Ok(o) => o,
 				Err(e) => return Err(e),
 			};
-            if unwrapped.starts_with(&module) {
-                let split: Vec<&str> = unwrapped.split(" ").collect();
-                let length = split.len();
-                if length > 1 {
-                    for dep in &split[1..] {
-                        let modpath = format!("{}/{}", &basepath, dep);
+			if unwrapped.starts_with(&module) {
+				let split: Vec<&str> = unwrapped.split(" ").collect();
+				let length = split.len();
+				if length > 1 {
+					for dep in &split[1..] {
+						let modpath = format!("{}/{}", &basepath, dep);
 
-                        match load(modpath.as_str(), String::new()) {
+						match load(modpath.as_str(), String::new()) {
 							Err(e) => {
 								if e.kind() != ErrorKind::AlreadyExists {
 									return Err(e);
@@ -142,11 +142,11 @@ pub fn modprobe(name: String, params: String, kernel: Selection) -> io::Result<(
 							}
 							Ok(_) => (),
 						}
-                    }
-                }
-            }
-        }
-    }
+					}
+				}
+			}
+		}
+	}
 
 	// Load final module
 	load(path.as_str(), params)
